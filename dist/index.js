@@ -128,7 +128,26 @@ var Rosnodejs = {
     var nodeOpts = options.node || {};
     rosNode = new RosNode(nodeName, rosMasterUri, nodeOpts);
 
-    return this._loadOnTheFlyMessages(options).then(_checkMasterHelper).then(Logging.initializeRosOptions.bind(Logging, this, options.logging)).then(Time._initializeRosTime.bind(Time, this)).then(function () {
+    function logPromise() {
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      return new Promise(function (resolve, reject) {
+        var _console;
+
+        (_console = console).log.apply(_console, args);
+        resolve();
+      });
+    }
+
+    return this._loadOnTheFlyMessages(options).then(_checkMasterHelper)
+    // .then(logPromise("initNode", 1))
+    .then(Logging.initializeRosOptions.bind(Logging, this, options.logging))
+    // .then(logPromise("initNode", 2))
+    .then(Time._initializeRosTime.bind(Time, this))
+    // .then(logPromise("initNode", 3))
+    .then(function () {
       return _this.getNodeHandle();
     }).catch(function (err) {
       log.error('Error during initialization: ' + err);

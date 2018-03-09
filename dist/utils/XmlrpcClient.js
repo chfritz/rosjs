@@ -35,6 +35,7 @@ var XmlrpcCall = function () {
 
       return new Promise(function (resolve, reject) {
         client.methodCall(_this.method, _this.data, function (err, resp) {
+          console.log("call response", err, resp);
           if (err) {
             reject(err);
           } else if (resp[0] !== 1) {
@@ -84,6 +85,7 @@ var XmlrpcClient = function (_EventEmitter) {
   }, {
     key: 'call',
     value: function call(method, data, resolve, reject, options) {
+      console.log("XmlrpcClient.call", method, data, options);
       var newCall = new XmlrpcCall(method, data, resolve, reject, options);
       var numCalls = this._callQueue.length;
       this._callQueue.push(newCall);

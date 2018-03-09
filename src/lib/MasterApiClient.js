@@ -154,6 +154,7 @@ class MasterApiClient {
 
   getUri(callerId, options) {
     let data = [callerId];
+    console.log("getUri", callerId, options);
     return new Promise((resolve, reject) => {
       this._call('getUri', data, resolve, reject, options);
     });

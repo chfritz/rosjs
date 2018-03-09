@@ -162,6 +162,7 @@ var MasterApiClient = function () {
       var _this9 = this;
 
       var data = [callerId];
+      console.log("getUri", callerId, options);
       return new Promise(function (resolve, reject) {
         _this9._call('getUri', data, resolve, reject, options);
       });

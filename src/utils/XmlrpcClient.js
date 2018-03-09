@@ -18,6 +18,7 @@ class XmlrpcCall {
   call(client) {
     return new Promise((resolve, reject) => {
       client.methodCall(this.method, this.data, (err, resp) => {
+          console.log("call response", err, resp);
         if (err) {
           reject(err);
         }
@@ -58,6 +59,7 @@ class XmlrpcClient extends EventEmitter {
   }
 
   call(method, data, resolve, reject, options) {
+    console.log("XmlrpcClient.call", method, data, options);
     const newCall = new XmlrpcCall(method, data, resolve, reject, options);
     const numCalls = this._callQueue.length;
     this._callQueue.push(newCall);

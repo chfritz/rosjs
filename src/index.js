@@ -127,10 +127,20 @@ let Rosnodejs = {
     const nodeOpts = options.node || {};
     rosNode = new RosNode(nodeName, rosMasterUri, nodeOpts);
 
+    function logPromise(...args) {
+      return new Promise((resolve, reject) => {
+          console.log(...args);
+          resolve();
+        });
+    }
+
     return this._loadOnTheFlyMessages(options)
       .then(_checkMasterHelper)
+        // .then(logPromise("initNode", 1))
       .then(Logging.initializeRosOptions.bind(Logging, this, options.logging))
+        // .then(logPromise("initNode", 2))
       .then(Time._initializeRosTime.bind(Time, this))
+        // .then(logPromise("initNode", 3))
       .then(() => { return this.getNodeHandle(); })
       .catch((err) => {
         log.error('Error during initialization: ' + err);
