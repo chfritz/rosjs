@@ -467,6 +467,7 @@ class SubscriberImpl extends EventEmitter {
     const error = TcprosUtils.validatePubHeader(header, this.getType(), this._messageHandler.md5sum());
     if (error) {
       this._log.error(`Unable to validate subscriber ${this.getTopic()} connection header ${JSON.stringify(header)}`);
+      console.log(error.toString('utf-8'));
       socket.end(Serialize(error));
       return;
     }

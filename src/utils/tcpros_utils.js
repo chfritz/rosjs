@@ -182,9 +182,9 @@ let TcprosUtils = {
       return this.serializeString('Connection header missing expected field [md5sum]');
     }
     // rostopic will send '*' for some commands (hz)
-    else if (header.type !== type && header.type !== '*') {
-      return this.serializeString('Got incorrect message type [' + header.type + '] expected [' + type + ']');
-    }
+    // else if (header.type !== type && header.type !== '*') {
+    //   return this.serializeString('Got incorrect message type [' + header.type + '] expected [' + type + ']');
+    // }
     else if (header.md5sum !== md5sum && header.md5sum !== '*') {
       return this.serializeString('Got incorrect md5sum [' + header.md5sum + '] expected [' + md5sum + ']');
     }
