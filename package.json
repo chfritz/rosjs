@@ -13,7 +13,8 @@
     "flatten": "node tools/flatten.js",
     "generate": "node dist/tools/generateMessages.js",
     "compile": "babel src/ -d dist/",
-    "prepublish": "npm run compile"
+    "prepublish": "npm run compile",
+    "prepare": "npm run compile"
   },
   "author": "chris smith",
   "license": "Apache-2.0",
