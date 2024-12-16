@@ -387,10 +387,19 @@ class SubscriberImpl extends EventEmitter {
   }
 
   _handleTcpTopicRequestResponse(resp, nodeUri){
-    let info = resp[2];
-    let port = info[2];
-    let address = info[1];
-    let socket = new TCPSocket();
+    const info = resp[2];
+    const port = info[2];
+    const address = info[1];
+    const socket = new TCPSocket({
+      onread: {
+        // Using this onread callback instead of .pipe() is more CPU efficient
+        buffer: Buffer.allocUnsafe(10 * 2**20), // MB
+        callback: (bytes, buf) => {
+          socket.$deserializer && socket.$deserializer.write(buf.subarray(0,bytes));
+        }
+      }
+    });
+
     socket.name = address + ':' + port;
     socket.nodeUri = nodeUri;
 
@@ -421,9 +430,9 @@ class SubscriberImpl extends EventEmitter {
       this._log.debug('Subscriber on ' + this.getTopic() + ' connected to publisher at ' + address + ':' + port);
       socket.write(this._createTcprosHandshake());
     });
+
     let deserializer = new DeserializeStream();
     socket.$deserializer = deserializer;
-    socket.pipe(deserializer);
 
     // cache client in "pending" map.
     // It's not validated yet so we don't want it to show up as a client.
