@@ -38,15 +38,19 @@ class DeserializeStream extends Transform {
     // for the next message we'll need to deserialize
     this._inBody = false;
 
-    // track how many bytes of this message we've received so far
-    this._messageConsumed = 0;
-
     // how long this message will be
     this._messageLen = -1;
 
+    // buffer for holding the length of the message
+    this._messageSizeBuffer = Buffer.allocUnsafe(4);
+    // Number of bytes of the length field have we received so far for this message
+    this._messageSizeBufferReceived = 0;
+
     // as bytes of this message arrive, store them in this
     // buffer until we have the whole thing
-    this._messageBuffer = [];
+    this._messageBuffer = Buffer.allocUnsafe(1000); // initial allocation
+    // Number of bytes received so far for this message
+    this._messageBufferReceived = 0;
 
     // TODO: These are specific to parsing a service response...
     //   don't use them everywhere
@@ -62,26 +66,24 @@ class DeserializeStream extends Transform {
 
     while (pos < chunkLen) {
       if (this._inBody) {
-        let messageRemaining = this._messageLen - this._messageConsumed;
+        let messageRemaining = this._messageLen - this._messageBufferReceived;
 
         // if the chunk is longer than the amount of the message we have left
         // just pull off what we need
         if (chunkLen >= messageRemaining + pos) {
-          let slice = chunk.slice(pos, pos + messageRemaining);
-          this._messageBuffer.push(slice);
-          let concatBuf = Buffer.concat(this._messageBuffer, this._messageLen);
-          this.emitMessage(concatBuf);
+          chunk.copy(this._messageBuffer, this._messageBufferReceived, pos, pos + messageRemaining);
 
-          // message finished, reset
-          this._messageBuffer = [];
+          // message finished, emit and reset
+          this.emitMessage(this._messageBuffer.slice(0, this._messageLen));
           pos += messageRemaining;
           this._inBody = false;
-          this._messageConsumed = 0;
+          this._messageBufferReceived = 0;
+          this._messageSizeBufferReceived = 0;
         } else {
           // rest of the chunk does not complete the message
           // cache it and move on
-          this._messageBuffer.push(chunk.slice(pos));
-          this._messageConsumed += chunkLen - pos;
+          chunk.copy(this._messageBuffer, this._messageBufferReceived, pos);
+          this._messageBufferReceived += chunkLen - pos;
           pos = chunkLen;
         }
       } else {
@@ -91,19 +93,22 @@ class DeserializeStream extends Transform {
           ++pos;
         }
 
-        let bufLen = 0;
-        this._messageBuffer.forEach(bufferEntry => {
-          bufLen += bufferEntry.length;
-        });
-
         // first 4 bytes of the message are a uint32 length field
-        if (chunkLen - pos >= 4 - bufLen) {
-          this._messageBuffer.push(chunk.slice(pos, pos + 4 - bufLen));
-          const buffer = Buffer.concat(this._messageBuffer, 4);
-          this._messageLen = buffer.readUInt32LE(0);
-          pos += 4 - bufLen;
+        if (chunkLen - pos >= 4 - this._messageSizeBufferReceived) {
+          chunk.copy(this._messageSizeBuffer, this._messageSizeBufferReceived, pos, pos + 4 - this._messageSizeBufferReceived);
 
-          this._messageBuffer = [];
+          this._messageLen = this._messageSizeBuffer.readUInt32LE(0);
+          pos += 4 - this._messageSizeBufferReceived;
+          this._messageSizeBufferReceived = 4;
+
+          // We've now completely received the 4 bytes of the length.
+
+          // do we need to grow the buffer?
+          if (this._messageLen > this._messageBuffer.length) {
+            this._messageBuffer = Buffer.allocUnsafe(this._messageLen);
+          }
+
+          this._messageBufferReceived = 0;
           // if its an empty message, there won't be any bytes left and message
           // will never be emitted -- handle that case here
           if (this._messageLen === 0 && pos === chunkLen) {
@@ -113,7 +118,8 @@ class DeserializeStream extends Transform {
           }
         } else {
           // the length field is split on a chunk
-          this._messageBuffer.push(chunk.slice(pos));
+          chunk.copy(this._messageSizeBuffer, this._messageSizeBufferReceived, pos, pos + 4 - this._messageSizeBufferReceived);
+          this._messageSizeBufferReceived = chunkLen;
           pos = chunkLen;
         }
       }

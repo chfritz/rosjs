@@ -416,6 +416,7 @@ class RosNode extends EventEmitter {
 
     let _createServer = callback => {
       const server = net.createServer(connection => {
+        connection.on("error", () => {}); //add this incase of ECONNRESET crash the whole program
         let conName = connection.remoteAddress + ":" + connection.remotePort;
         connection.name = conName;
         this._debugLog.info('Node %s got connection from %s', this.getNodeName(), conName);
@@ -549,10 +550,10 @@ class RosNode extends EventEmitter {
           let typeClass = messageUtils.getHandlerForMsgType(header.type, true);
 
           let dgramSize = params[2][0][4];
-          let resp = [1, '', ['UDPROS', NetworkUtils.getHost(), //maybe wrong
-          port, ++this._connections, //connection Id
+          let resp = [1, ' ', // this string must not be empty, otherwise the subscriber will not understand the response
+          ['UDPROS', NetworkUtils.getHost(), this._udprosPort, ++this._connections, //connection Id
           dgramSize, UdprosUtils.createPubHeader(this.getNodeName(), typeClass.md5sum(), typeClass.messageDefinition(), topic, header.type)]];
-          pub.addUdpSubscriber(resp[2]);
+          pub.addUdpSubscriber(resp[2], host, port);
           callback(null, resp);
         }
       }
