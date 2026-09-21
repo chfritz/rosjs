@@ -1,5 +1,5 @@
 {
-  "name": "rosnodejs",
+  "name": "rosnodejs-cf",
   "version": "3.1.0",
   "description": "Native ROS for nodejs",
   "main": "dist/index.js",
@@ -17,11 +17,11 @@
     "prepublish": "npm run compile",
     "prepare": "npm run compile"
   },
-  "author": "chris smith",
+  "author": "chris smith (fork by Christian Fritz)",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/RethinkRobotics-opensource/rosnodejs.git"
+    "url": "git@github.com:chfritz/rosjs.git"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
